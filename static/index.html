@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English to Spanish Translator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .output-box {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 100px;
+        }
+        .loading {
+            text-align: center;
+            display: none;
+            margin: 10px 0;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .debug-panel {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>English to Spanish Translator</h1>
+    <div class="container">
+        <h2>Input Text (English)</h2>
+        <textarea id="inputText" rows="5" placeholder="Enter English text here..."></textarea>
+        <button id="translateButton">Translate to Spanish</button>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            Translating...
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>Spanish Output</h2>
+        <div class="output-box" id="output"></div>
+    </div>
+    
+    <div class="debug-panel" id="debugPanel">
+        <h3>Debug Information</h3>
+        <div id="debugOutput"></div>
+    </div>
+
+    <script>
+        // Debug logging function
+        function debugLog(message) {
+            console.log(message);
+            const debugOutput = document.getElementById('debugOutput');
+            const debugPanel = document.getElementById('debugPanel');
+            
+            debugPanel.style.display = 'block';
+            const entry = document.createElement('div');
+            entry.textContent = message;
+            debugOutput.appendChild(entry);
+        }
+        
+        // Get DOM elements
+        const translateButton = document.getElementById('translateButton');
+        const inputText = document.getElementById('inputText');
+        const outputDiv = document.getElementById('output');
+        const loadingDiv = document.getElementById('loading');
+        
+        // Translation function
+        async function translateText() {
+            const text = inputText.value.trim();
+            
+            if (!text) {
+                outputDiv.textContent = "Please enter some text to translate.";
+                return;
+            }
+            
+            // Show loading indicator
+            loadingDiv.style.display = "block";
+            translateButton.disabled = true;
+            outputDiv.textContent = "";
+            
+            debugLog(`Sending translation request for text: "${text}"`);
+            
+            try {
+                // Using relative URL for deployment compatibility
+                const url = '/translate';
+                debugLog(`Sending POST request to ${url}`);
+                
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ text })
+                });
+                
+                debugLog(`Received response with status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                debugLog(`Got result: ${JSON.stringify(result)}`);
+                
+                if (result.error) {
+                    outputDiv.textContent = `Error: ${result.error}`;
+                } else {
+                    // Convert \n to <br> for proper line breaks in HTML
+                    outputDiv.innerHTML = (result.translated_text || "No translation returned").replace(/\n/g, '<br>');
+                }
+            } catch (error) {
+                debugLog(`Error: ${error.message}`);
+                outputDiv.textContent = `Error translating text: ${error.message}`;
+            } finally {
+                // Hide loading indicator
+                loadingDiv.style.display = "none";
+                translateButton.disabled = false;
+            }
+        }
+        
+        // Add event listeners
+        translateButton.addEventListener('click', translateText);
+        
+        // Allow pressing Enter key in the textarea to trigger translation
+        inputText.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                translateText();
+            }
+        });
+        
+        // Log that the script loaded successfully
+        debugLog('Translator UI initialized successfully');
+    </script>
+</body>
+</html>

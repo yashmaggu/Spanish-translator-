@@ -1,0 +1,14 @@
+[build]
+  publish = "static"
+  command = "echo 'Static files ready for deployment'"
+
+[build.environment]
+  PYTHON_VERSION = "3.9"
+
+[[redirects]]
+  from = "/translate"
+  to = "/.netlify/functions/api"
+  status = 200
+
+[functions]
+  directory = "netlify/functions"
